@@ -1,0 +1,35 @@
+# According to the mentioned, this script will have used in windows monitoring so I write it as a PowerShell script, we can sure write it as a shell script, but it will need additional step to run which is “WSL”, to run shell scripts on windows.
+# The script parts are commented in the script itself to be easy to explain what I did for you.
+# Like what I did, we should to configure a Gmail address to use in SMTP which used in the script and also to test mail like what I did lsg.task@gmail.com , to save time . this link which I used to learn about this part of the script because I did not do it before with PowerShell.
+https://techexpert.tips/powershell/powershell-send-email-gmail/
+# I set the value of CPUThreshold = .25 only for testing, sure it might be 70 or above, according to what’s we need.
+------------------------------------------------------------------------------------------------------------
+# Set the threshold for CPU utilization
+$CPUThreshold = .25
+
+# Get the current CPU utilization
+$CPUUtilization = Get-Counter -Counter "\Processor(_Total)\% Processor Time" | Select-Object -ExpandProperty CounterSamples | Select-Object -ExpandProperty CookedValue
+
+# Check if the utilization is above the threshold
+if ($CPUUtilization -gt $CPUThreshold) {
+
+    # Get the current disk space 
+    $DiskSpace = Get-WmiObject Win32_LogicalDisk | Select-Object DeviceID, FreeSpace, Size
+
+    # Create an email message with the details of CPU utilization and disk space 
+    $Message = "The current CPU utilization is $CPUUtilization%, which exceeds the threshold of $CPUThreshold%.`n`n" 
+
+    foreach ($Disk in $DiskSpace) {
+
+        # Calculate the percentage of free disk space 
+        $FreeSpacePercentage = [Math]::Round(($Disk.FreeSpace/$Disk.Size)*100, 2)
+
+        # Add a line to the message for each disk 
+        $Message += "Drive '$($Disk.DeviceID)' has $FreeSpacePercentage% free space remaining.`n"
+
+    }
+
+    # Send an email alert with the message , the server will mentioned by it's HostName
+    $mycredentials = Get-Credential
+Send-MailMessage -SmtpServer smtp.gmail.com -Port 587 -UseSsl -From lsg.task@gmail.com -To mohamed.s.abdelmotlb@gmail.com -Subject "Message from $env:COMPUTERNAME"  -Body 'Dear SysAdmin , kindly be noted that the server which mentioned in the subject  has a High CPU utilization or Low Disk Space , kindly check it ' -Credential $mycredentials
+    } 
