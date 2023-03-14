@@ -1,0 +1,38 @@
+# Before run the script, we have to put the not running service in a variable to see what’s services you need to start:
+                         $stoppedServices = Get-Service | Where-Object {$_. Status -ne "Running"}
+# Then retrieve the value of this variable to see not running services on your machine 
+                         $stoppedService 
+# Copy the serviceName you want to start, then run the script and pass its name like the following:
+ScriptName.ps1 ServiceName 
+# 	we can’t make the script to run any service not running automatically because there is some service can’t be starte manually overall, so the script will always give an error in this case, so this is the best way to run a specific service if its nor running and cased a problem in the server main function, the script also wil validate the service you entered, if it doesn’t exist, it will till you also. 
+--------------------------------------------------------------------------------------------------
+Param(
+    [string] [Parameter(Mandatory = $true)] $serviceName
+)
+write-host "please run powershell as administrator before running this script"
+if ($serviceName -eq "all"){
+    write-host "script will start all stopped service"
+    # Get all services on the server
+    $stoppedServices = Get-Service | Where-Object {$_.Status -ne "Running"}
+    # Loop through each service and check if it is running
+    foreach ($stoppedService in $stoppedServices) {
+        Write-Host "starting $($stoppedService.Name)" -ForegroundColor Yellow
+        Start-Service $($stoppedServices.Name)
+    }
+} else {
+    write-host "script will start given service"
+    write-host "script will check if service exist or not"
+    $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+    if ($service.Length -gt 0) {
+        write-host "service exists , script will check if its running or not , if not running, script will start it"
+        if ($service.status -eq "Running"){
+            write-host "service is already running, script will do nothing"
+        } else {
+            write-host $service
+            write-host "service ==> $($service.Name)  is not running, script will start it"
+            Start-Service -Name $($service.Name)
+        }
+    } else {
+        write-host "service is not part of windows current machine services, please check"
+    }
+}
